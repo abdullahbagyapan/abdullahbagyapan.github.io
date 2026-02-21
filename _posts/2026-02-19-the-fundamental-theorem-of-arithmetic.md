@@ -1,6 +1,6 @@
 ---
 title: "The Fundamental Theorem of Arithmetic"
-date: 2026-02-21
+date: 2026-02-19
 categories: [number-theory]
 tags: [prime-numbers]
 math: true
