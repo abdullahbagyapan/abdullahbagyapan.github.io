@@ -126,7 +126,7 @@ Let's solve the below discrete logarithm problem step by step:
 
 $$
 \begin{aligned}
-    5x \equiv 17 \pmod{19}
+    5^x \equiv 17 \pmod{19}
 \end{aligned}
 $$
 
