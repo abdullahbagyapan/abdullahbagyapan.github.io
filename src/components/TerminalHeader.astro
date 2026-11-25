@@ -1,0 +1,29 @@
+---
+interface Props {
+  command: string;
+  class?: string;
+}
+
+const { command, class: className = '' } = Astro.props;
+---
+
+<div class:list={['terminal-header text-2xl sm:text-3xl md:text-5xl', className]}>
+  <span class="terminal-prompt">$</span>
+  <span class="terminal-command">{command}</span>
+</div>
+
+<style>
+  .terminal-header {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .terminal-command {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+</style>

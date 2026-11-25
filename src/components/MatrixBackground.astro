@@ -1,0 +1,116 @@
+<canvas
+  id="matrix-bg-canvas"
+  transition:persist="matrix-bg-canvas"
+  class="fixed inset-0 w-screen h-screen pointer-events-none z-[-1] opacity-85"
+  aria-hidden="true"
+></canvas>
+
+<script>
+  function setupMatrixBackground() {
+    if ((window as any).__matrixBackgroundRunning) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    (window as any).__matrixBackgroundRunning = true;
+
+    const glyphs = '0123456789ABCDEFｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜXYZ+-*/=%$#@&';
+    const randomGlyph = () => glyphs[Math.floor(Math.random() * glyphs.length)];
+
+    let canvas = document.getElementById('matrix-bg-canvas') as HTMLCanvasElement | null;
+    let ctx = canvas?.getContext('2d') ?? null;
+    let fontSize = 24;
+    let columns = 0;
+    let isHome = true;
+
+    const drops: number[] = [];
+    const speeds: number[] = [];
+    const leadChars: string[] = [];
+    const trailChars: string[] = [];
+
+    function resetDrop(i: number, randomY: boolean) {
+      drops[i] = randomY ? Math.random() * ((canvas?.height ?? 720) / fontSize) : 0;
+      speeds[i] = 0.16 + Math.random() * 0.22;
+      leadChars[i] = randomGlyph();
+      trailChars[i] = randomGlyph();
+    }
+
+    function syncSize() {
+      if (!canvas) return;
+      const prevCols = columns;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      fontSize = window.innerWidth < 640 ? 20 : 24;
+      columns = Math.ceil(canvas.width / fontSize);
+      if (ctx) ctx.font = `bold ${fontSize}px 'JetBrains Mono', monospace`;
+      for (let i = prevCols; i < columns; i++) resetDrop(i, true);
+    }
+
+    function syncCanvas() {
+      const live = document.getElementById('matrix-bg-canvas') as HTMLCanvasElement | null;
+      if (live && live !== canvas) {
+        canvas = live;
+        ctx = canvas.getContext('2d');
+      }
+      isHome = (window.location.pathname.replace(/\/$/, '') || '/') === '/';
+      if (!canvas) return;
+      canvas.style.display = isHome ? 'none' : 'block';
+      if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+        syncSize();
+      }
+    }
+
+    syncSize();
+    syncCanvas();
+
+    window.addEventListener('resize', syncSize);
+    document.addEventListener('astro:after-swap', syncCanvas);
+
+    let lastDraw = 0;
+    const frameInterval = 40;
+
+    function render(timestamp: number) {
+      requestAnimationFrame(render);
+      if (isHome || document.hidden || timestamp - lastDraw < frameInterval) return;
+      lastDraw = timestamp;
+
+      if (!canvas || !canvas.isConnected) {
+        canvas = document.getElementById('matrix-bg-canvas') as HTMLCanvasElement | null;
+        ctx = canvas?.getContext('2d') ?? null;
+        if (ctx) ctx.font = `bold ${fontSize}px 'JetBrains Mono', monospace`;
+      }
+      if (!canvas || !ctx) return;
+
+      ctx.fillStyle = 'rgba(30, 30, 46, 0.12)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < columns; i++) {
+        const prevRow = Math.floor(drops[i]);
+        drops[i] += speeds[i];
+        const row = Math.floor(drops[i]);
+
+        if (row !== prevRow) {
+          trailChars[i] = leadChars[i];
+          if (Math.random() < 0.25) leadChars[i] = randomGlyph();
+        } else if (Math.random() < 0.03) {
+          leadChars[i] = randomGlyph();
+        }
+
+        const x = i * fontSize;
+        const y = row * fontSize;
+
+        if (y > 0 && y < canvas.height + fontSize) {
+          ctx.fillStyle = '#e6ffe6';
+          ctx.fillText(leadChars[i], x, y);
+          ctx.fillStyle = '#a6e3a1';
+          ctx.fillText(trailChars[i], x, y - fontSize);
+        }
+
+        if (y > canvas.height && Math.random() > 0.985) {
+          resetDrop(i, false);
+        }
+      }
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  setupMatrixBackground();
+</script>

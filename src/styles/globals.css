@@ -1,0 +1,173 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --color-background: #1e1e2e;
+  --color-foreground: #cdd6f4;
+  --color-card: #313244;
+  --color-primary: #a6e3a1;
+  --color-primary-foreground: #1e1e2e;
+  --color-secondary: #45475a;
+  --color-muted-foreground: #a6adc8;
+  --color-destructive: #f38ba8;
+  --color-border: #45475a;
+  --color-terminal-command: #f9e2af;
+
+  --font-sans: 'Inter', 'Geist', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Geist Mono', monospace;
+}
+
+:root[data-theme="dark"] {
+  --matrix-scanline: rgba(166, 227, 161, 0.035);
+  --matrix-glow: 0 0 10px rgba(166, 227, 161, 0.35);
+}
+
+* {
+  border-color: var(--color-border);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+::view-transition-new(root) {
+  animation: none !important;
+}
+
+::view-transition-group(root) {
+  animation-duration: 0s !important;
+}
+
+html:has([data-page="home"]),
+body:has([data-page="home"]) {
+  overflow: hidden !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--matrix-scanline) 0px,
+    var(--matrix-scanline) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-mono);
+}
+
+.terminal-prompt {
+  color: var(--color-primary);
+}
+
+.terminal-command {
+  color: var(--color-terminal-command);
+}
+
+.terminal-window {
+  background-color: color-mix(in srgb, var(--color-card) 45%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.terminal-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.terminal-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.terminal-button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.terminal-button-red { background-color: #ff5f56; }
+.terminal-button-yellow { background-color: #ffbd2e; }
+.terminal-button-green { background-color: #27ca40; }
+
+.terminal-content {
+  padding: 1rem;
+  font-family: var(--font-mono);
+  overflow-x: auto;
+  word-break: break-word;
+}
+
+@media (min-width: 640px) {
+  .terminal-content {
+    padding: 1.5rem;
+  }
+}
+
+.prose {
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  line-height: 1.75;
+  --tw-prose-body: var(--color-foreground);
+  --tw-prose-headings: var(--color-foreground);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--color-foreground);
+  --tw-prose-counters: var(--color-muted-foreground);
+  --tw-prose-bullets: var(--color-muted-foreground);
+  --tw-prose-hr: var(--color-border);
+  --tw-prose-quotes: var(--color-foreground);
+  --tw-prose-quote-borders: var(--color-border);
+  --tw-prose-captions: var(--color-muted-foreground);
+  --tw-prose-code: var(--color-primary);
+  --tw-prose-pre-code: var(--color-foreground);
+  --tw-prose-pre-bg: var(--color-card);
+  --tw-prose-th-borders: var(--color-border);
+  --tw-prose-td-borders: var(--color-border);
+}
+
+.prose :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-mono) !important;
+  font-weight: 600;
+}
+
+.prose :is(code, pre) {
+  font-family: var(--font-mono) !important;
+}

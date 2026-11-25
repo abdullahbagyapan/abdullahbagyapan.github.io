@@ -1,0 +1,41 @@
+---
+import Terminal from './Terminal.astro';
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: Heading[];
+}
+
+const filteredHeadings = Astro.props.headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+---
+
+{filteredHeadings.length > 0 && (
+  <nav>
+    <Terminal title="table of contents" class="mb-8">
+      <div class="mb-2 font-mono text-sm">
+        <span class="terminal-prompt">$</span>
+        <span class="terminal-command ml-2">cat toc.txt</span>
+      </div>
+      <ul class="space-y-1 font-mono text-sm">
+        {filteredHeadings.map((heading) => (
+          <li
+            class:list={[
+              'text-muted-foreground hover:text-primary transition-colors',
+              heading.depth === 3 && 'ml-4',
+            ]}
+          >
+            <a href={`#${heading.slug}`}>
+              {heading.depth === 2 ? '→ ' : '  · '}
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </Terminal>
+  </nav>
+)}

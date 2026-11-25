@@ -1,0 +1,154 @@
+---
+import Layout from '../layouts/Layout.astro';
+import TerminalHeader from '../components/TerminalHeader.astro';
+import Terminal from '../components/Terminal.astro';
+import { getBlogPosts, getUniqueTags } from '../lib/utils';
+import { siteConfig } from '../config';
+
+const posts = await getBlogPosts();
+const tagCounts = getUniqueTags(posts)
+  .map((tag) => ({
+    tag,
+    count: posts.filter((p) => p.data.tags.includes(tag)).length,
+  }))
+  .sort((a, b) => b.count - a.count);
+
+const searchPosts = posts.map((p) => ({
+  title: p.data.title,
+  description: p.data.description,
+  slug: p.id,
+  tags: p.data.tags,
+  date: p.data.date.toISOString(),
+}));
+---
+
+<Layout title={`search | ${siteConfig.title}`} boxed>
+  <TerminalHeader command="grep -ri 'query' posts/*" class="mb-4" />
+
+  <div class="font-mono text-sm text-muted-foreground mb-8">
+    <p class="mt-2">Search through {posts.length} posts.</p>
+  </div>
+
+  <Terminal title="search" class="mb-10">
+    <div class="flex items-center gap-2 font-mono">
+      <span class="terminal-prompt">$</span>
+      <span class="text-muted-foreground">grep</span>
+      <input
+        type="text"
+        id="search-input"
+        placeholder="search query..."
+        class="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/50"
+        autocomplete="off"
+      />
+    </div>
+  </Terminal>
+
+  <div id="search-results" class="space-y-4 mb-10"></div>
+
+  <div id="no-results" class="hidden text-center py-8">
+    <p class="text-muted-foreground font-mono">No posts found matching your query.</p>
+  </div>
+
+  <div id="browse-tags" class="pt-6 border-t border-border">
+    <h3 class="text-lg font-mono font-semibold mb-4">Browse by tag:</h3>
+    <div class="flex flex-wrap gap-3">
+      {tagCounts.map(({ tag, count }) => (
+        <a
+          href={`/tags/${tag}`}
+          class="px-3 py-2 bg-secondary/70 rounded font-mono text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+        >
+          <span>#{tag}</span>
+          <span class="text-xs opacity-60">({count})</span>
+        </a>
+      ))}
+    </div>
+  </div>
+
+  <script define:vars={{ searchPosts }}>
+    function initSearch() {
+      const searchInput = document.getElementById('search-input');
+      const searchResults = document.getElementById('search-results');
+      const noResults = document.getElementById('no-results');
+      const browseTags = document.getElementById('browse-tags');
+
+      if (!searchInput || !searchResults || searchInput.dataset.bound) return;
+      searchInput.dataset.bound = '1';
+
+      const escapeHtml = (str) =>
+        str.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+      const formatDate = (dateStr) =>
+        new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+      const highlightMatch = (text, query) => {
+        const safe = escapeHtml(text);
+        if (!query.trim()) return safe;
+        const regex = new RegExp(`(${escapeHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return safe.replace(regex, '<mark class="bg-primary/30 text-foreground rounded px-0.5">$1</mark>');
+      };
+
+      const search = (query) => {
+        if (!query.trim()) {
+          searchResults.innerHTML = '';
+          noResults?.classList.add('hidden');
+          browseTags?.classList.remove('hidden');
+          return;
+        }
+
+        browseTags?.classList.add('hidden');
+        const q = query.toLowerCase();
+        const results = searchPosts.filter(
+          (post) =>
+            post.title.toLowerCase().includes(q) ||
+            post.description.toLowerCase().includes(q) ||
+            post.tags.some((tag) => tag.toLowerCase().includes(q)),
+        );
+
+        if (results.length === 0) {
+          searchResults.innerHTML = '';
+          noResults?.classList.remove('hidden');
+          return;
+        }
+
+        noResults?.classList.add('hidden');
+        searchResults.innerHTML = results
+          .map(
+            (post) => `
+          <article class="terminal-window">
+            <div class="terminal-titlebar">
+              <div class="terminal-buttons">
+                <span class="terminal-button terminal-button-red"></span>
+                <span class="terminal-button terminal-button-yellow"></span>
+                <span class="terminal-button terminal-button-green"></span>
+              </div>
+              <span class="text-sm text-muted-foreground font-mono ml-4">${formatDate(post.date)}</span>
+            </div>
+            <a href="/blog/${encodeURIComponent(post.slug)}" class="block terminal-content hover:bg-secondary/30 transition-colors">
+              <h3 class="font-mono font-semibold mb-2 hover:text-primary transition-colors">
+                ${highlightMatch(post.title, query)}
+              </h3>
+              <p class="text-sm text-muted-foreground mb-2">
+                ${highlightMatch(post.description, query)}
+              </p>
+              <div class="flex flex-wrap gap-2">
+                ${post.tags
+                  .map(
+                    (tag) =>
+                      `<span class="text-xs font-mono px-2 py-1 bg-secondary/80 rounded text-muted-foreground">#${escapeHtml(tag)}</span>`,
+                  )
+                  .join('')}
+              </div>
+            </a>
+          </article>
+        `,
+          )
+          .join('');
+      };
+
+      searchInput.addEventListener('input', (e) => search(e.target.value));
+      searchInput.focus();
+    }
+
+    document.addEventListener('astro:page-load', initSearch);
+  </script>
+</Layout>

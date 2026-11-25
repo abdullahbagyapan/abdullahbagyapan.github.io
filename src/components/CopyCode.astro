@@ -1,0 +1,37 @@
+<script>
+  function initCopyButtons() {
+    document.querySelectorAll('pre').forEach((block) => {
+      if (block.parentElement?.querySelector('.copy-button')) return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'relative group';
+      block.parentNode?.insertBefore(wrapper, block);
+      wrapper.appendChild(block);
+
+      const button = document.createElement('button');
+      button.className = 'copy-button absolute top-2 right-2 px-2 py-1 text-xs font-mono bg-secondary text-muted-foreground rounded opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary cursor-pointer';
+      button.textContent = '[copy]';
+      button.setAttribute('aria-label', 'Copy code');
+
+      button.addEventListener('click', async () => {
+        const code = block.querySelector('code')?.textContent || block.textContent || '';
+        try {
+          await navigator.clipboard.writeText(code);
+          button.textContent = '[copied!]';
+          button.classList.add('text-primary');
+        } catch {
+          button.textContent = '[error]';
+          button.classList.add('text-destructive');
+        }
+        setTimeout(() => {
+          button.textContent = '[copy]';
+          button.classList.remove('text-primary', 'text-destructive');
+        }, 2000);
+      });
+
+      wrapper.appendChild(button);
+    });
+  }
+
+  document.addEventListener('astro:page-load', initCopyButtons);
+</script>

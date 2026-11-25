@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import TerminalHeader from '../components/TerminalHeader.astro';
+import Terminal from '../components/Terminal.astro';
+import { getCollection, render } from 'astro:content';
+import { siteConfig } from '../config';
+
+export async function getStaticPaths() {
+  const pages = await getCollection('pages');
+  return pages.map((page) => ({
+    params: { slug: page.id },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+const { Content } = await render(page);
+
+const commands: Record<string, string> = {
+  about: 'whoami',
+  contact: 'mail -s "Hello"',
+};
+const command = commands[page.id] || `cat ${page.id}.md`;
+---
+
+<Layout title={`${page.data.title.toLowerCase()} | ${siteConfig.title}`} description={page.data.description} boxed>
+  <TerminalHeader command={command} class="mb-10" />
+
+  <div class="prose max-w-none">
+    <Content components={{ Terminal }} />
+  </div>
+</Layout>

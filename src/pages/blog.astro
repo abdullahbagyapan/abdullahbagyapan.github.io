@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import TerminalHeader from '../components/TerminalHeader.astro';
+import BlogCard from '../components/BlogCard.astro';
+import { getBlogPosts } from '../lib/utils';
+import { siteConfig } from '../config';
+
+const posts = await getBlogPosts();
+---
+
+<Layout title={`blog | ${siteConfig.title}`} boxed>
+  <TerminalHeader command="find . -name '*.md'" class="mb-4" />
+
+  <div class="font-mono text-sm text-muted-foreground mb-8">
+    <p class="mt-2">
+      {posts.length} posts found.
+      <a href="/archives" class="text-primary hover:underline ml-2">[archives]</a>
+    </p>
+  </div>
+
+  <div class="grid gap-4">
+    {posts.map((post) => (
+      <BlogCard
+        title={post.data.title}
+        description={post.data.description}
+        date={post.data.date}
+        slug={post.id}
+        tags={post.data.tags}
+      />
+    ))}
+  </div>
+</Layout>

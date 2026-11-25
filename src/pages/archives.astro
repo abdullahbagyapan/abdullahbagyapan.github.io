@@ -1,0 +1,52 @@
+---
+import Layout from '../layouts/Layout.astro';
+import TerminalHeader from '../components/TerminalHeader.astro';
+import { formatDate, getBlogPosts } from '../lib/utils';
+import { siteConfig } from '../config';
+
+const posts = await getBlogPosts();
+const postsByYear = posts.reduce<Record<number, typeof posts>>((acc, post) => {
+  const year = post.data.date.getFullYear();
+  (acc[year] ??= []).push(post);
+  return acc;
+}, {});
+
+const years = Object.keys(postsByYear).map(Number).sort((a, b) => b - a);
+---
+
+<Layout title={`archives | ${siteConfig.title}`} boxed>
+  <TerminalHeader command="history | grep 'post'" class="mb-4" />
+
+  <div class="font-mono text-sm text-muted-foreground mb-8">
+    <p class="mt-2">{posts.length} posts spanning {years.length} year{years.length !== 1 ? 's' : ''}.</p>
+  </div>
+
+  <div class="space-y-12">
+    {years.map((year) => (
+      <div>
+        <h2 class="text-2xl font-bold font-mono mb-6 text-primary">{year}</h2>
+        <ul class="space-y-4">
+          {postsByYear[year].map((post) => (
+            <li class="flex items-baseline gap-4">
+              <time
+                datetime={post.data.date.toISOString()}
+                class="text-sm font-mono text-muted-foreground shrink-0 w-24"
+              >
+                {formatDate(post.data.date, 'monthDay')}
+              </time>
+              <a href={`/blog/${post.id}`} class="font-mono hover:text-primary transition-colors">
+                {post.data.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+
+  <div class="mt-12 pt-6 border-t border-border">
+    <a href="/blog" class="font-mono text-sm text-muted-foreground hover:text-primary transition-colors">
+      ← back to blog
+    </a>
+  </div>
+</Layout>

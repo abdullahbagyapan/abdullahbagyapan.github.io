@@ -1,0 +1,65 @@
+---
+import '../styles/globals.css';
+import Header from '../components/Header.astro';
+import MatrixBackground from '../components/MatrixBackground.astro';
+import { ClientRouter } from 'astro:transitions';
+import { siteConfig } from '../config';
+
+interface Props {
+  title: string;
+  description?: string;
+  boxed?: boolean;
+  article?: boolean;
+}
+
+const {
+  title,
+  description = siteConfig.description,
+  boxed = false,
+  article = false,
+} = Astro.props;
+
+const currentPath = Astro.url.pathname;
+const isHome = currentPath === '/' || currentPath === '';
+const Wrapper = article ? 'article' : 'section';
+---
+
+<!doctype html>
+<html lang="en" data-theme={siteConfig.theme}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <ClientRouter fallback="animate" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet" />
+  </head>
+  <body class:list={[
+    "min-h-screen bg-background text-foreground antialiased flex flex-col relative",
+    isHome && "h-screen max-h-screen overflow-hidden",
+  ]}>
+    <MatrixBackground />
+    <Header currentPath={currentPath} />
+    <main class:list={["flex-1", isHome && "flex flex-col min-h-0 overflow-hidden"]}>
+      {boxed ? (
+        <Wrapper class="py-10 sm:py-16">
+          <div class="container max-w-4xl mx-auto px-3 sm:px-6">
+            <div class="bg-card/55 backdrop-blur-sm border border-border/70 rounded-xl p-4 sm:p-10 shadow-lg">
+              <slot />
+            </div>
+          </div>
+        </Wrapper>
+      ) : (
+        <slot />
+      )}
+    </main>
+  </body>
+</html>

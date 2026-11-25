@@ -1,0 +1,127 @@
+---
+import { siteConfig } from '../config';
+import { getCollection } from 'astro:content';
+
+interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = '/' } = Astro.props;
+
+const pages = await getCollection('pages');
+const pageNavItems = pages
+  .filter((page) => !page.data.hideFromNav)
+  .sort((a, b) => a.data.title.localeCompare(b.data.title))
+  .map((page) => ({
+    href: `/${page.id}`,
+    label: page.data.title.toLowerCase(),
+  }));
+
+const navItems = [
+  { href: '/', label: 'home' },
+  ...siteConfig.nav.map((item) => ({ href: item.href, label: item.text })),
+  ...pageNavItems,
+  { href: '/search', label: 'search' },
+];
+
+const isActive = (href: string) =>
+  currentPath === href || (href !== '/' && currentPath.startsWith(`${href}/`));
+---
+
+<header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  <div class="container max-w-5xl mx-auto px-4 sm:px-6 flex h-14 items-center justify-between">
+    <a href="/" class="flex items-center gap-2 font-mono hover:text-primary transition-colors">
+      <span class="text-primary">~</span>
+      <span class="font-semibold">/{siteConfig.title}</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-1 text-base font-mono">
+      {navItems.map((item) => (
+        <a
+          href={item.href}
+          class:list={[
+            'px-2 py-1.5 rounded transition-all hover:bg-primary/10 hover:text-primary',
+            isActive(item.href) ? 'text-primary' : 'text-muted-foreground',
+          ]}
+        >
+          [{item.label}]
+        </a>
+      ))}
+    </nav>
+
+    <button
+      id="mobile-menu-button"
+      class="inline-flex md:hidden items-center justify-center rounded-md px-2 py-1 hover:bg-card hover:text-primary focus:outline-none font-mono text-sm cursor-pointer border border-border"
+      aria-expanded="false"
+      aria-label="Toggle menu"
+    >
+      [menu]
+    </button>
+  </div>
+
+  <div id="mobile-menu" class="hidden md:hidden border-t border-border/80 bg-background/98 backdrop-blur-md shadow-2xl max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+    <nav class="container max-w-5xl mx-auto px-4 py-4 flex flex-col gap-1 font-mono text-base">
+      {navItems.map((item) => {
+        const active = isActive(item.href);
+        return (
+          <a
+            href={item.href}
+            class:list={[
+              'px-3 py-2.5 rounded transition-all hover:bg-primary/10 hover:text-primary flex items-center justify-between',
+              active ? 'text-primary bg-primary/10 font-semibold' : 'text-muted-foreground',
+            ]}
+          >
+            <span>[{item.label}]</span>
+            {active && <span class="text-xs text-primary">●</span>}
+          </a>
+        );
+      })}
+      <hr class="my-2 border-border/60" />
+      <a
+        href="/archives"
+        class:list={[
+          'px-3 py-2.5 rounded transition-all hover:bg-primary/10 hover:text-primary flex items-center justify-between',
+          isActive('/archives') ? 'text-primary bg-primary/10 font-semibold' : 'text-muted-foreground',
+        ]}
+      >
+        <span>[archives]</span>
+        {isActive('/archives') && <span class="text-xs text-primary">●</span>}
+      </a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  if (!(window as any).__mobileMenuBound) {
+    (window as any).__mobileMenuBound = true;
+
+    const closeMenu = () => {
+      const menu = document.getElementById('mobile-menu');
+      const button = document.getElementById('mobile-menu-button');
+      menu?.classList.add('hidden');
+      if (button) {
+        button.setAttribute('aria-expanded', 'false');
+        button.textContent = '[menu]';
+      }
+    };
+
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement | null;
+      const toggleBtn = target?.closest('#mobile-menu-button');
+      const menu = document.getElementById('mobile-menu');
+
+      if (toggleBtn && menu) {
+        const isHidden = menu.classList.toggle('hidden');
+        toggleBtn.setAttribute('aria-expanded', String(!isHidden));
+        toggleBtn.textContent = isHidden ? '[menu]' : '[close]';
+        return;
+      }
+
+      if (menu && !menu.classList.contains('hidden') && (target?.closest('#mobile-menu a') || !target?.closest('header'))) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener('astro:after-swap', closeMenu);
+  }
+</script>

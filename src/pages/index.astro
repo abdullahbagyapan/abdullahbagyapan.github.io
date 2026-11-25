@@ -1,0 +1,122 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { siteConfig } from '../config';
+---
+
+<Layout title={siteConfig.title}>
+  <section data-page="home" class="w-full h-[calc(100dvh-3.5rem)] flex items-center justify-center p-2 sm:p-4 overflow-hidden select-none">
+    <div class="w-full flex items-center justify-center overflow-hidden">
+      <div class="matrix-text-box">
+        <span id="matrix-text" class="font-bold font-mono tracking-wide text-primary matrix-glow whitespace-nowrap"></span><span id="matrix-cursor" class="crt-cursor" aria-hidden="true"></span>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .matrix-text-box {
+    font-family: var(--font-mono);
+    font-size: clamp(0.92rem, 5.2vw, 4.2rem);
+    line-height: 1.1;
+    width: 25ch;
+    max-width: calc(100vw - 1.5rem);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+
+  .matrix-glow {
+    text-shadow: var(--matrix-glow);
+  }
+
+  .crt-cursor {
+    display: inline-block;
+    width: 0.6em;
+    height: 1.15em;
+    background-color: var(--color-primary);
+    vertical-align: text-bottom;
+    margin-left: 0.15em;
+    flex-shrink: 0;
+    box-shadow: var(--matrix-glow);
+    animation: cursor-blink 0.9s step-end infinite;
+  }
+
+  @keyframes cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+</style>
+
+<script>
+  function runMatrixMovieLoop() {
+    const textEl = document.getElementById('matrix-text');
+    if (!textEl || (textEl as any).__loopRunning) return;
+    (textEl as any).__loopRunning = true;
+
+    const lines = [
+      'Wake up, Neo...',
+      'The Matrix has you...',
+      'Follow the white rabbit.',
+      'Knock, knock, Neo.',
+    ];
+
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    async function typeString(str: string) {
+      if (!textEl || !document.contains(textEl)) return;
+      textEl.textContent = '';
+      for (const char of str) {
+        if (!document.contains(textEl)) return;
+        textEl.textContent += char;
+        let delay = 70 + Math.floor(Math.random() * 65);
+        if (char === ',' || char === '.') delay += 200;
+        else if (char === ' ') delay += 40;
+        await sleep(delay);
+      }
+    }
+
+    async function deleteString() {
+      if (!textEl || !document.contains(textEl)) return;
+      while (textEl.textContent && textEl.textContent.length > 0) {
+        if (!document.contains(textEl)) return;
+        textEl.textContent = textEl.textContent.slice(0, -1);
+        await sleep(45 + Math.floor(Math.random() * 35));
+      }
+    }
+
+    function waitForVisible(): Promise<void> {
+      if (!document.hidden) return Promise.resolve();
+      return new Promise((resolve) => {
+        const onVisible = () => {
+          if (!document.hidden) {
+            document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('focus', onVisible);
+            resolve();
+          }
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('focus', onVisible);
+      });
+    }
+
+    (async () => {
+      await waitForVisible();
+      await sleep(700);
+      while (document.contains(textEl)) {
+        for (let i = 0; i < lines.length; i++) {
+          if (!document.contains(textEl)) return;
+          await typeString(lines[i]);
+          await sleep(i === lines.length - 1 ? 3000 : 2500);
+          await deleteString();
+          await sleep(500);
+        }
+        await sleep(1000);
+      }
+    })();
+  }
+
+  document.addEventListener('astro:page-load', runMatrixMovieLoop);
+</script>

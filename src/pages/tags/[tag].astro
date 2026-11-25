@@ -1,0 +1,70 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import TerminalHeader from '../../components/TerminalHeader.astro';
+import BlogCard from '../../components/BlogCard.astro';
+import { getBlogPosts, getUniqueTags } from '../../lib/utils';
+import { siteConfig } from '../../config';
+
+export async function getStaticPaths() {
+  const posts = await getBlogPosts();
+  const allTags = getUniqueTags(posts);
+
+  return allTags.map((tag) => ({
+    params: { tag },
+    props: {
+      tag,
+      allTags,
+      posts: posts.filter((post) => post.data.tags.includes(tag)),
+    },
+  }));
+}
+
+const { tag, allTags, posts } = Astro.props;
+const otherTags = allTags.filter((t) => t !== tag);
+---
+
+<Layout title={`#${tag} | ${siteConfig.title}`} boxed>
+  <TerminalHeader command={`grep -rli "${tag}" ./posts/*`} class="mb-4" />
+
+  <div class="font-mono text-sm text-muted-foreground mb-8">
+    <span class="terminal-prompt">$</span>
+    <span class="terminal-command ml-2">grep -c "{tag}" ./posts/* | grep -v ":0$" | wc -l</span>
+    <p class="mt-2">
+      {posts.length} post{posts.length !== 1 ? 's' : ''} tagged with <span class="text-primary">#{tag}</span>
+    </p>
+  </div>
+
+  <div class="grid gap-4 mb-10">
+    {posts.map((post) => (
+      <BlogCard
+        title={post.data.title}
+        description={post.data.description}
+        date={post.data.date}
+        slug={post.id}
+        tags={post.data.tags}
+      />
+    ))}
+  </div>
+
+  {otherTags.length > 0 && (
+    <div class="pt-6 border-t border-border">
+      <p class="text-muted-foreground font-mono text-xs mb-3">Other tags:</p>
+      <div class="flex flex-wrap gap-2">
+        {otherTags.map((t) => (
+          <a
+            href={`/tags/${t}`}
+            class="text-xs font-mono px-2 py-1 bg-secondary rounded text-muted-foreground hover:text-primary transition-colors"
+          >
+            #{t}
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <div class="mt-8">
+    <a href="/blog" class="font-mono text-sm text-muted-foreground hover:text-primary transition-colors">
+      ← back to all posts
+    </a>
+  </div>
+</Layout>
